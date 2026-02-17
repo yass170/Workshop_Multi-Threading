@@ -1,7 +1,7 @@
 namespace WS_Multithread.Threading;
 
 /// <summary>
-/// Orchestre le lancement et l'attente d'un lot de threads.
+/// Orchestre le lancement d'un lot de threads.
 /// </summary>
 internal sealed class ThreadBatchRunner
 {
@@ -20,12 +20,10 @@ internal sealed class ThreadBatchRunner
     }
 
     /// <summary>
-    /// Lance tous les threads puis attend leur fin d'execution.
+    /// Lance tous les threads.
     /// </summary>
     public void Run()
     {
-        var threads = new List<Thread>(_options.ThreadCount);
-
         for (var index = 1; index <= _options.ThreadCount; index++)
         {
             var threadName = $"Thread_{index:D3}";
@@ -34,18 +32,12 @@ internal sealed class ThreadBatchRunner
                 Name = threadName
             };
 
-            threads.Add(thread);
             thread.Start(threadName);
 
             if (_options.DelayBetweenStartsMilliseconds > 0)
             {
                 Thread.Sleep(_options.DelayBetweenStartsMilliseconds);
             }
-        }
-
-        foreach (var thread in threads)
-        {
-            thread.Join();
         }
     }
 }

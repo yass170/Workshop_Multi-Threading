@@ -3,7 +3,7 @@ using WS_Multithread.Threading;
 namespace WS_Multithread;
 
 /// <summary>
-/// Point d'entree de la feature 5 du workshop multithreading.
+/// Point d'entree de la feature 6 du workshop multithreading.
 /// </summary>
 internal static class Program
 {
@@ -32,15 +32,21 @@ internal static class Program
         ObservationScenario.ResetCounter();
         ObservationScenario.ResetExclusiveAccessCounter();
 
+        using var completionEvent = new CountdownEvent(options.ThreadCount);
+
         Console.WriteLine($"Mode d'acces exclusif: {exclusiveAccessPrimitive.Name}");
 
-        IThreadScenario scenario = new ObservationScenario(
+        IThreadScenario businessScenario = new ObservationScenario(
             options.SimulatedWorkDurationMilliseconds,
             exclusiveAccessPrimitive,
             MaxExclusiveAccessWaitMilliseconds);
+        IThreadScenario scenario = new CountdownSignalingScenarioDecorator(
+            businessScenario,
+            completionEvent);
         var runner = new ThreadBatchRunner(options, scenario);
 
         runner.Run();
+        completionEvent.Wait();
 
         Console.WriteLine();
         Console.WriteLine(
