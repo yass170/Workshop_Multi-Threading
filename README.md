@@ -54,7 +54,7 @@ Constat: l'ordre d'execution des threads est non deterministe. Sans protection a
 
 Explication: plusieurs threads lisent/modifient/ecrivent la meme variable en concurrence. Les operations ne sont pas atomiques sans primitive adaptee.
 
-PR associee: [#PR-F01](https://github.com/yass170/Workshop_Multi-Threading/pull/2) (observation), [`#PR-F02`](https://github.com/yass170/Workshop_Multi-Threading/pull/2) (explication/correction avec `Interlocked`).
+PR associee: [`#PR-F01`](https://github.com/yass170/Workshop_Multi-Threading/pull/2) (observation), [`#PR-F02`](https://github.com/yass170/Workshop_Multi-Threading/pull/4) (explication/correction avec `Interlocked`).
 
 ### Partie 1 - Question: "Quelle est la difference entre `++_nb_thread_in_progress` et `_nb_thread_in_progress++` ?"
 - `++x` (prefixe): incremente puis retourne la valeur incrementee.
@@ -62,25 +62,25 @@ PR associee: [#PR-F01](https://github.com/yass170/Workshop_Multi-Threading/pull/
 
 Dans les deux cas, en multithread sans synchronisation, ce n'est pas thread-safe.
 
-PR associee: `#PR-F01`.
+PR associee: [`#PR-F01`](https://github.com/yass170/Workshop_Multi-Threading/pull/2) (observation).
 
 ### Partie 1 - Question: "Etes-vous capable de definir precisement l'instruction `Sleep(30)` ?"
 `Sleep(30)` demande au scheduler de suspendre le thread courant pendant environ 30 ms minimum. Ce n'est pas une garantie exacte: la reprise depend de la resolution d'horloge, de la charge machine et de l'ordonnancement, donc la duree reelle peut etre superieure.
 
-PR associee: `#PR-F01`.
+PR associee: [`#PR-F01`](https://github.com/yass170/Workshop_Multi-Threading/pull/2) (observation).
 
 ### Partie 3 - Question: "Vous devez constater une difference avec Mutex, avez-vous une explication ?"
 Oui. `lock`/`Monitor` synchronisent uniquement les threads d'un meme processus. `Mutex` nomme est un objet noyau partageable entre processus: deux instances de l'application se bloquent mutuellement dessus.
 
-PR associee: `#PR-F03`.
+PR associee: [`#PR-F03`](https://github.com/yass170/Workshop_Multi-Threading/pull/6) (observation).
 
 ### Partie 3 - Question: "Dans le code de la nouvelle fonction, est-il encore necessaire d'utiliser Interlocked ?"
 En acces strictement exclusif (1 seul thread a la fois), `Interlocked` n'est pas strictement necessaire pour le compteur de la section critique.  
 Par contre, il reste pertinent pour rendre le code robuste si la politique change (ex: cohorte a 3 avec semaphore), et pour garder un comptage fiable quel que soit le mode.
 
-PR associee: `#PR-F03`, `#PR-F04`.
+PR associee: [`#PR-F03`](https://github.com/yass170/Workshop_Multi-Threading/pull/6), [`#PR-F04`](https://github.com/yass170/Workshop_Multi-Threading/pull/8).
 
 ### Partie 4 - Question: "Est-il possible de gerer un probleme de cohorte sur des processus distincts ?"
 Oui, avec une primitive nommee partagee entre processus (ex: `Semaphore` nomme). Dans ce repo, la cohorte globale reste limitee a 3 meme avec plusieurs instances lancees en parallele.
 
-PR associee: `#PR-F04`.
+PR associee: [`#PR-F04`](https://github.com/yass170/Workshop_Multi-Threading/pull/8).
