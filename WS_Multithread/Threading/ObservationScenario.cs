@@ -6,7 +6,7 @@ namespace WS_Multithread.Threading;
 internal sealed class ObservationScenario : IThreadScenario
 {
     /// <summary>
-    /// Compteur partage de threads en cours, volontairement non protege pour observer les races.
+    /// Compteur partage de threads en cours.
     /// </summary>
     private static int _nb_thread_in_progress = 0;
 
@@ -31,14 +31,14 @@ internal sealed class ObservationScenario : IThreadScenario
     /// <summary>
     /// Obtient la valeur courante du compteur partage.
     /// </summary>
-    public static int CurrentInProgressCount => _nb_thread_in_progress;
+    public static int CurrentInProgressCount => Interlocked.CompareExchange(ref _nb_thread_in_progress, 0, 0);
 
     /// <summary>
     /// Reinitialise le compteur partage.
     /// </summary>
     public static void ResetCounter()
     {
-        _nb_thread_in_progress = 0;
+        Interlocked.Exchange(ref _nb_thread_in_progress, 0);
     }
 
     /// <inheritdoc />
@@ -48,21 +48,22 @@ internal sealed class ObservationScenario : IThreadScenario
     }
 
     /// <summary>
-    /// Methode executee par tous les threads de la partie 1.
+    /// Methode executee par tous les threads.
+    /// Les incrementations/decrementations sont atomiques via <see cref="Interlocked"/>.
     /// </summary>
     /// <param name="threadState">Nom logique du thread.</param>
     public static void FctA(object? threadState)
     {
         var threadName = threadState as string ?? "Thread_Unknown";
 
-        ++_nb_thread_in_progress;
+        var countAfterIncrement = Interlocked.Increment(ref _nb_thread_in_progress);
         Console.WriteLine(
-            $"[{DateTime.UtcNow:HH:mm:ss.fff}] {threadName} START - in progress: {_nb_thread_in_progress}");
+            $"[{DateTime.UtcNow:HH:mm:ss.fff}] {threadName} START - in progress: {countAfterIncrement}");
 
         Thread.Sleep(_simulatedWorkDurationMilliseconds);
 
-        --_nb_thread_in_progress;
+        var countAfterDecrement = Interlocked.Decrement(ref _nb_thread_in_progress);
         Console.WriteLine(
-            $"[{DateTime.UtcNow:HH:mm:ss.fff}] {threadName} END   - in progress: {_nb_thread_in_progress}");
+            $"[{DateTime.UtcNow:HH:mm:ss.fff}] {threadName} END   - in progress: {countAfterDecrement}");
     }
 }
