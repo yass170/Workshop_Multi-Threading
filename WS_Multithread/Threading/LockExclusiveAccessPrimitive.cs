@@ -11,16 +11,33 @@ internal sealed class LockExclusiveAccessPrimitive : IExclusiveAccessPrimitive
     public string Name => "lock";
 
     /// <inheritdoc />
-    public void ExecuteExclusive(Action criticalSection)
+    public bool TryExecuteExclusive(Action criticalSection, TimeSpan timeout)
     {
         if (criticalSection is null)
         {
             throw new ArgumentNullException(nameof(criticalSection));
         }
 
-        lock (_syncRoot)
+        var lockTaken = false;
+
+        try
         {
+            Monitor.TryEnter(_syncRoot, timeout, ref lockTaken);
+
+            if (!lockTaken)
+            {
+                return false;
+            }
+
             criticalSection();
+            return true;
+        }
+        finally
+        {
+            if (lockTaken)
+            {
+                Monitor.Exit(_syncRoot);
+            }
         }
     }
 

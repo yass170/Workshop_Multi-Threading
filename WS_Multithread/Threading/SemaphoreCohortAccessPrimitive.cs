@@ -35,7 +35,7 @@ internal sealed class SemaphoreCohortAccessPrimitive : IExclusiveAccessPrimitive
     public string Name => $"semaphore({_maxConcurrentUsers})";
 
     /// <inheritdoc />
-    public void ExecuteExclusive(Action criticalSection)
+    public bool TryExecuteExclusive(Action criticalSection, TimeSpan timeout)
     {
         if (criticalSection is null)
         {
@@ -46,8 +46,15 @@ internal sealed class SemaphoreCohortAccessPrimitive : IExclusiveAccessPrimitive
 
         try
         {
-            hasEntered = _semaphore.WaitOne();
+            hasEntered = _semaphore.WaitOne(timeout);
+
+            if (!hasEntered)
+            {
+                return false;
+            }
+
             criticalSection();
+            return true;
         }
         finally
         {

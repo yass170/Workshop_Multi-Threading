@@ -11,7 +11,7 @@ internal sealed class MonitorExclusiveAccessPrimitive : IExclusiveAccessPrimitiv
     public string Name => "monitor";
 
     /// <inheritdoc />
-    public void ExecuteExclusive(Action criticalSection)
+    public bool TryExecuteExclusive(Action criticalSection, TimeSpan timeout)
     {
         if (criticalSection is null)
         {
@@ -22,8 +22,15 @@ internal sealed class MonitorExclusiveAccessPrimitive : IExclusiveAccessPrimitiv
 
         try
         {
-            Monitor.Enter(_syncRoot, ref lockTaken);
+            Monitor.TryEnter(_syncRoot, timeout, ref lockTaken);
+
+            if (!lockTaken)
+            {
+                return false;
+            }
+
             criticalSection();
+            return true;
         }
         finally
         {
