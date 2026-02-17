@@ -3,7 +3,7 @@ using WS_Multithread.Threading;
 namespace WS_Multithread;
 
 /// <summary>
-/// Point d'entree de la feature 1 du workshop multithreading.
+/// Point d'entree de la feature 2 du workshop multithreading.
 /// </summary>
 internal static class Program
 {
