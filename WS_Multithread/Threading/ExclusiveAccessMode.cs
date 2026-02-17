@@ -23,5 +23,10 @@ internal enum ExclusiveAccessMode
     /// <summary>
     /// Synchronisation via <see cref="Mutex"/>.
     /// </summary>
-    Mutex = 3
+    Mutex = 3,
+
+    /// <summary>
+    /// Limitation de cohorte via <see cref="Semaphore"/>.
+    /// </summary>
+    Semaphore = 4
 }

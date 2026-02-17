@@ -6,6 +6,8 @@ namespace WS_Multithread.Threading;
 internal static class ExclusiveAccessPrimitiveFactory
 {
     private const string CrossProcessMutexName = @"Global\WS_IPC_ExclusiveAccess_Mutex";
+    private const string CrossProcessSemaphoreName = @"Global\WS_IPC_Cohort_Semaphore";
+    private const int CohortSize = 3;
 
     /// <summary>
     /// Cree la primitive de synchronisation correspondant au mode demande.
@@ -20,6 +22,9 @@ internal static class ExclusiveAccessPrimitiveFactory
             ExclusiveAccessMode.Lock => new LockExclusiveAccessPrimitive(),
             ExclusiveAccessMode.Monitor => new MonitorExclusiveAccessPrimitive(),
             ExclusiveAccessMode.Mutex => new MutexExclusiveAccessPrimitive(CrossProcessMutexName),
+            ExclusiveAccessMode.Semaphore => new SemaphoreCohortAccessPrimitive(
+                CrossProcessSemaphoreName,
+                CohortSize),
             _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, "Mode d'acces exclusif non supporte.")
         };
     }

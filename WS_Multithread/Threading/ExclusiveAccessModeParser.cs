@@ -39,7 +39,7 @@ internal static class ExclusiveAccessModeParser
             }
         }
 
-        return ExclusiveAccessMode.Lock;
+        return ExclusiveAccessMode.Semaphore;
     }
 
     private static ExclusiveAccessMode ParseModeValue(string modeValue)
@@ -52,8 +52,9 @@ internal static class ExclusiveAccessModeParser
             "lock" => ExclusiveAccessMode.Lock,
             "monitor" => ExclusiveAccessMode.Monitor,
             "mutex" => ExclusiveAccessMode.Mutex,
+            "semaphore" => ExclusiveAccessMode.Semaphore,
             _ => throw new ArgumentException(
-                $"Mode d'acces exclusif invalide: '{modeValue}'. Valeurs attendues: none, lock, monitor, mutex.")
+                $"Mode d'acces invalide: '{modeValue}'. Valeurs attendues: none, lock, monitor, mutex, semaphore.")
         };
     }
 }
