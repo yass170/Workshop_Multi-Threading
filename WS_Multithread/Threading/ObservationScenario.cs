@@ -15,8 +15,10 @@ internal sealed class ObservationScenario : IThreadScenario
     /// </summary>
     private static int _CountExclusive_access = 0;
     private static int _MaxCountExclusive_access = 0;
+    private static int _SkippedExclusiveAccessCount = 0;
 
     private static int _simulatedWorkDurationMilliseconds = 30;
+    private static int _maxExclusiveAccessWaitMilliseconds = 200;
     private static IExclusiveAccessPrimitive? _exclusiveAccessPrimitive;
 
     /// <summary>
@@ -24,9 +26,11 @@ internal sealed class ObservationScenario : IThreadScenario
     /// </summary>
     /// <param name="simulatedWorkDurationMilliseconds">Delai simule dans la methode FctA.</param>
     /// <param name="exclusiveAccessPrimitive">Primitive de synchronisation a utiliser pour l'acces exclusif.</param>
+    /// <param name="maxExclusiveAccessWaitMilliseconds">Temps d'attente maximal avant abandon de la section controlee.</param>
     public ObservationScenario(
         int simulatedWorkDurationMilliseconds,
-        IExclusiveAccessPrimitive exclusiveAccessPrimitive)
+        IExclusiveAccessPrimitive exclusiveAccessPrimitive,
+        int maxExclusiveAccessWaitMilliseconds)
     {
         if (simulatedWorkDurationMilliseconds < 0)
         {
@@ -35,9 +39,17 @@ internal sealed class ObservationScenario : IThreadScenario
                 "Le delai de travail simule ne peut pas etre negatif.");
         }
 
+        if (maxExclusiveAccessWaitMilliseconds < 0)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(maxExclusiveAccessWaitMilliseconds),
+                "Le delai d'attente maximal ne peut pas etre negatif.");
+        }
+
         _exclusiveAccessPrimitive = exclusiveAccessPrimitive
             ?? throw new ArgumentNullException(nameof(exclusiveAccessPrimitive));
         _simulatedWorkDurationMilliseconds = simulatedWorkDurationMilliseconds;
+        _maxExclusiveAccessWaitMilliseconds = maxExclusiveAccessWaitMilliseconds;
     }
 
     /// <summary>
@@ -56,6 +68,11 @@ internal sealed class ObservationScenario : IThreadScenario
     public static int CurrentMaxExclusiveAccessCount => Interlocked.CompareExchange(ref _MaxCountExclusive_access, 0, 0);
 
     /// <summary>
+    /// Obtient le nombre de threads ayant abandonne l'acces apres expiration du delai d'attente.
+    /// </summary>
+    public static int CurrentSkippedExclusiveAccessCount => Interlocked.CompareExchange(ref _SkippedExclusiveAccessCount, 0, 0);
+
+    /// <summary>
     /// Reinitialise le compteur partage.
     /// </summary>
     public static void ResetCounter()
@@ -70,6 +87,7 @@ internal sealed class ObservationScenario : IThreadScenario
     {
         Interlocked.Exchange(ref _CountExclusive_access, 0);
         Interlocked.Exchange(ref _MaxCountExclusive_access, 0);
+        Interlocked.Exchange(ref _SkippedExclusiveAccessCount, 0);
     }
 
     /// <inheritdoc />
@@ -100,14 +118,15 @@ internal sealed class ObservationScenario : IThreadScenario
 
     /// <summary>
     /// Section de code avec acces controle.
+    /// Un thread abandonne si l'attente depasse la limite configuree.
     /// </summary>
     /// <param name="threadName">Nom logique du thread.</param>
     public static void Fct_Exclusive_access(string threadName)
     {
         var exclusiveAccessPrimitive = _exclusiveAccessPrimitive
             ?? throw new InvalidOperationException("La primitive d'acces exclusif n'est pas configuree.");
-
-        exclusiveAccessPrimitive.ExecuteExclusive(
+        var timeout = TimeSpan.FromMilliseconds(_maxExclusiveAccessWaitMilliseconds);
+        var hasExecuted = exclusiveAccessPrimitive.TryExecuteExclusive(
             () =>
             {
                 var countAfterEnter = Interlocked.Increment(ref _CountExclusive_access);
@@ -125,7 +144,15 @@ internal sealed class ObservationScenario : IThreadScenario
                     Console.WriteLine(
                         $"[{DateTime.UtcNow:HH:mm:ss.fff}] P{Environment.ProcessId} {threadName} EXIT  - exclusive count: {countAfterExit}");
                 }
-            });
+            },
+            timeout);
+
+        if (!hasExecuted)
+        {
+            var skippedCount = Interlocked.Increment(ref _SkippedExclusiveAccessCount);
+            Console.WriteLine(
+                $"[{DateTime.UtcNow:HH:mm:ss.fff}] P{Environment.ProcessId} {threadName} SKIP  - attente > {_maxExclusiveAccessWaitMilliseconds} ms (skipped: {skippedCount})");
+        }
     }
 
     private static void UpdateMaxExclusiveAccessCount(int candidate)

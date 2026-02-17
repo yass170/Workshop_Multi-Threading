@@ -11,8 +11,10 @@ internal interface IExclusiveAccessPrimitive : IDisposable
     string Name { get; }
 
     /// <summary>
-    /// Execute une section critique avec la strategie de synchronisation courante.
+    /// Tente d'executer une section critique avec la strategie de synchronisation courante.
     /// </summary>
     /// <param name="criticalSection">Code de la section critique.</param>
-    void ExecuteExclusive(Action criticalSection);
+    /// <param name="timeout">Temps maximal d'attente avant abandon.</param>
+    /// <returns><see langword="true"/> si la section critique a ete executee; sinon <see langword="false"/>.</returns>
+    bool TryExecuteExclusive(Action criticalSection, TimeSpan timeout);
 }

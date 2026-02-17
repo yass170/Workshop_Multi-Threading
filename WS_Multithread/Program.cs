@@ -3,10 +3,12 @@ using WS_Multithread.Threading;
 namespace WS_Multithread;
 
 /// <summary>
-/// Point d'entree de la feature 4 du workshop multithreading.
+/// Point d'entree de la feature 5 du workshop multithreading.
 /// </summary>
 internal static class Program
 {
+    private const int MaxExclusiveAccessWaitMilliseconds = 200;
+
     /// <summary>
     /// Lance 300 threads executant <see cref="ObservationScenario.FctA(object?)"/>.
     /// </summary>
@@ -34,7 +36,8 @@ internal static class Program
 
         IThreadScenario scenario = new ObservationScenario(
             options.SimulatedWorkDurationMilliseconds,
-            exclusiveAccessPrimitive);
+            exclusiveAccessPrimitive,
+            MaxExclusiveAccessWaitMilliseconds);
         var runner = new ThreadBatchRunner(options, scenario);
 
         runner.Run();
@@ -46,5 +49,7 @@ internal static class Program
             $"Fin d'execution. Valeur finale de _CountExclusive_access = {ObservationScenario.CurrentExclusiveAccessCount}");
         Console.WriteLine(
             $"Fin d'execution. Valeur max observee de _CountExclusive_access = {ObservationScenario.CurrentMaxExclusiveAccessCount}");
+        Console.WriteLine(
+            $"Fin d'execution. Nombre de threads impatients (attente > {MaxExclusiveAccessWaitMilliseconds} ms) = {ObservationScenario.CurrentSkippedExclusiveAccessCount}");
     }
 }

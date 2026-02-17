@@ -9,7 +9,7 @@ internal sealed class NoSynchronizationExclusiveAccessPrimitive : IExclusiveAcce
     public string Name => "none";
 
     /// <inheritdoc />
-    public void ExecuteExclusive(Action criticalSection)
+    public bool TryExecuteExclusive(Action criticalSection, TimeSpan timeout)
     {
         if (criticalSection is null)
         {
@@ -17,6 +17,7 @@ internal sealed class NoSynchronizationExclusiveAccessPrimitive : IExclusiveAcce
         }
 
         criticalSection();
+        return true;
     }
 
     /// <inheritdoc />

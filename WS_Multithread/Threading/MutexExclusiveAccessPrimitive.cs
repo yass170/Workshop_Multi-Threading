@@ -25,7 +25,7 @@ internal sealed class MutexExclusiveAccessPrimitive : IExclusiveAccessPrimitive
     public string Name => "mutex";
 
     /// <inheritdoc />
-    public void ExecuteExclusive(Action criticalSection)
+    public bool TryExecuteExclusive(Action criticalSection, TimeSpan timeout)
     {
         if (criticalSection is null)
         {
@@ -38,7 +38,7 @@ internal sealed class MutexExclusiveAccessPrimitive : IExclusiveAccessPrimitive
         {
             try
             {
-                ownsMutex = _mutex.WaitOne();
+                ownsMutex = _mutex.WaitOne(timeout);
             }
             catch (AbandonedMutexException)
             {
@@ -46,7 +46,13 @@ internal sealed class MutexExclusiveAccessPrimitive : IExclusiveAccessPrimitive
                 ownsMutex = true;
             }
 
+            if (!ownsMutex)
+            {
+                return false;
+            }
+
             criticalSection();
+            return true;
         }
         finally
         {
