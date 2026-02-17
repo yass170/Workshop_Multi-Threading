@@ -1,7 +1,7 @@
 namespace WS_Multithread.Threading;
 
 /// <summary>
-/// Definit une primitive capable de serialiser l'acces a une section critique.
+/// Definit une primitive capable de controler l'acces a une section critique.
 /// </summary>
 internal interface IExclusiveAccessPrimitive : IDisposable
 {

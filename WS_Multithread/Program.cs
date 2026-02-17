@@ -3,7 +3,7 @@ using WS_Multithread.Threading;
 namespace WS_Multithread;
 
 /// <summary>
-/// Point d'entree de la feature 3 du workshop multithreading.
+/// Point d'entree de la feature 4 du workshop multithreading.
 /// </summary>
 internal static class Program
 {
@@ -14,7 +14,7 @@ internal static class Program
     /// <remarks>
     /// Argument supporte:
     /// <list type="bullet">
-    /// <item><description><c>--mode lock|monitor|mutex|none</c>.</description></item>
+    /// <item><description><c>--mode semaphore|lock|monitor|mutex|none</c>.</description></item>
     /// </list>
     /// </remarks>
     private static void Main(string[] args)
@@ -44,5 +44,7 @@ internal static class Program
             $"Fin d'execution. Valeur finale de _nb_thread_in_progress = {ObservationScenario.CurrentInProgressCount}");
         Console.WriteLine(
             $"Fin d'execution. Valeur finale de _CountExclusive_access = {ObservationScenario.CurrentExclusiveAccessCount}");
+        Console.WriteLine(
+            $"Fin d'execution. Valeur max observee de _CountExclusive_access = {ObservationScenario.CurrentMaxExclusiveAccessCount}");
     }
 }

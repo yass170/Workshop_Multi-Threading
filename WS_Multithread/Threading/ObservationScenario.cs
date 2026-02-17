@@ -14,6 +14,7 @@ internal sealed class ObservationScenario : IThreadScenario
     /// Compteur de threads presents dans la section d'acces exclusif.
     /// </summary>
     private static int _CountExclusive_access = 0;
+    private static int _MaxCountExclusive_access = 0;
 
     private static int _simulatedWorkDurationMilliseconds = 30;
     private static IExclusiveAccessPrimitive? _exclusiveAccessPrimitive;
@@ -47,7 +48,12 @@ internal sealed class ObservationScenario : IThreadScenario
     /// <summary>
     /// Obtient la valeur courante du compteur d'acces exclusif.
     /// </summary>
-    public static int CurrentExclusiveAccessCount => _CountExclusive_access;
+    public static int CurrentExclusiveAccessCount => Interlocked.CompareExchange(ref _CountExclusive_access, 0, 0);
+
+    /// <summary>
+    /// Obtient le pic d'acces simultanes observe dans la section critique.
+    /// </summary>
+    public static int CurrentMaxExclusiveAccessCount => Interlocked.CompareExchange(ref _MaxCountExclusive_access, 0, 0);
 
     /// <summary>
     /// Reinitialise le compteur partage.
@@ -62,7 +68,8 @@ internal sealed class ObservationScenario : IThreadScenario
     /// </summary>
     public static void ResetExclusiveAccessCounter()
     {
-        _CountExclusive_access = 0;
+        Interlocked.Exchange(ref _CountExclusive_access, 0);
+        Interlocked.Exchange(ref _MaxCountExclusive_access, 0);
     }
 
     /// <inheritdoc />
@@ -92,7 +99,7 @@ internal sealed class ObservationScenario : IThreadScenario
     }
 
     /// <summary>
-    /// Section de code necessitant un acces exclusif.
+    /// Section de code avec acces controle.
     /// </summary>
     /// <param name="threadName">Nom logique du thread.</param>
     public static void Fct_Exclusive_access(string threadName)
@@ -103,9 +110,10 @@ internal sealed class ObservationScenario : IThreadScenario
         exclusiveAccessPrimitive.ExecuteExclusive(
             () =>
             {
-                ++_CountExclusive_access;
+                var countAfterEnter = Interlocked.Increment(ref _CountExclusive_access);
+                UpdateMaxExclusiveAccessCount(countAfterEnter);
                 Console.WriteLine(
-                    $"[{DateTime.UtcNow:HH:mm:ss.fff}] P{Environment.ProcessId} {threadName} ENTER - exclusive count: {_CountExclusive_access}");
+                    $"[{DateTime.UtcNow:HH:mm:ss.fff}] P{Environment.ProcessId} {threadName} ENTER - exclusive count: {countAfterEnter}");
 
                 try
                 {
@@ -113,10 +121,33 @@ internal sealed class ObservationScenario : IThreadScenario
                 }
                 finally
                 {
-                    --_CountExclusive_access;
+                    var countAfterExit = Interlocked.Decrement(ref _CountExclusive_access);
                     Console.WriteLine(
-                        $"[{DateTime.UtcNow:HH:mm:ss.fff}] P{Environment.ProcessId} {threadName} EXIT  - exclusive count: {_CountExclusive_access}");
+                        $"[{DateTime.UtcNow:HH:mm:ss.fff}] P{Environment.ProcessId} {threadName} EXIT  - exclusive count: {countAfterExit}");
                 }
             });
+    }
+
+    private static void UpdateMaxExclusiveAccessCount(int candidate)
+    {
+        while (true)
+        {
+            var currentMax = CurrentMaxExclusiveAccessCount;
+
+            if (candidate <= currentMax)
+            {
+                return;
+            }
+
+            var previousValue = Interlocked.CompareExchange(
+                ref _MaxCountExclusive_access,
+                candidate,
+                currentMax);
+
+            if (previousValue == currentMax)
+            {
+                return;
+            }
+        }
     }
 }
